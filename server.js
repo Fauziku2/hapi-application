@@ -2,6 +2,7 @@ var Hapi = require('hapi')
 var uuid = require('uuid')
 var fs = require('fs')
 var Joi = require('joi')
+var Boom = require('boom')
 
 var server = new Hapi.Server()
 
@@ -18,6 +19,13 @@ server.views({
 
 server.ext('onRequest', function (request, reply) {
   console.log('Request received: ' + request.path)
+  reply.continue()
+})
+
+server.ext('onPreResponse', function (request, reply) {
+  if (request.reponse.isBoom) {
+    return reply.view('error', request.reponse)
+  }
   reply.continue()
 })
 
@@ -72,7 +80,7 @@ function newCardHandler (request, reply) {
   } else {
     Joi.validate(request.payload, cardSchema, function (err, val) {
       if (err) {
-        return reply(err)
+        return reply(Boom.badRequest(err.details[0].message))
       }
       var card = {
         name: request.payload.name,
@@ -82,7 +90,7 @@ function newCardHandler (request, reply) {
         card_image: val.card_image
       }
       saveCard(card)
-      reply.redirect('/cards')  
+      reply.redirect('/cards')
     })
   }
 }
@@ -107,7 +115,7 @@ function loadCards () {
   return JSON.parse(file.toString())
 }
 
-function mapImages() {
+function mapImages () {
   return fs.readdirSync('./public/images/cards')
 }
 
