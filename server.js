@@ -17,9 +17,42 @@ server.views({
   path: './templates'
 })
 
-server.ext('onRequest', function (request, reply) {
-  console.log('Request received: ' + request.path)
-  reply.continue()
+server.register({
+  register: require('good'),
+  option: {
+    opsInterval: 5000,
+    reporters: [
+      {
+        report: require('good-file'),
+        events: {ops: '*'},
+        config: {
+          path: './logs',
+          prefix: 'hapi-process',
+          rotate: 'daily'
+        }
+      },
+      {
+        report: require('good-file'),
+        events: {response: '*'},
+        config: {
+          path: './logs',
+          prefix: 'hapi-request',
+          rotate: 'daily'
+        }
+      },
+      {
+        report: require('good-file'),
+        events: {error: '*'},
+        config: {
+          path: './logs',
+          prefix: 'hapi-error',
+          rotate: 'daily'
+        }
+      }
+    ]
+  }
+}, function (err) {
+  console.log(err)
 })
 
 server.ext('onPreResponse', function (request, reply) {
